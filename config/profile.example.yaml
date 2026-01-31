@@ -1,0 +1,138 @@
+# Profile: Frank Harris
+# Personal briefing profile for Briefings newsletter
+# Last updated: January 2026
+
+recipient:
+  name: Frank Harris
+  role: Executive Coach & Software Builder
+  location: Brooklyn, NY (primary) / Westport, CT
+
+  background:
+    current:
+      - Executive Coach at hirefrank.com (CTI-trained, Co-Active methodology)
+      - Author of Frank Takeaways newsletter
+    previous:
+      - Co-founder, Kitchen Rodeo
+      - VP of Product, Platform at Slack (developer experience, APIs, next-gen platform)
+      - VP of Platform & Growth at InVision
+      - VP of Product at Casper
+      - VP of Product at Betterment
+      - Product Lead at Cover
+      - Group Product Manager at Etsy
+      - UX Designer at Google (self-taught engineer turned designer)
+    experience: 20+ years at intersection of engineering, design, and product
+
+  # The dual identity matters — not "coach who used to build" but "coach AND builder"
+  identity_note: |
+    Frank splits time roughly 50/50 between coaching tech executives and building software.
+    Both are active, present-tense identities. The building credibility strengthens the coaching;
+    the coaching insights inform what he builds.
+
+  expertise:
+    - Product strategy & leadership
+    - Platform & API design
+    - Enterprise SaaS
+    - Developer experience
+    - Team building & scaling
+    - Workflow automation (n8n, Make, Zapier)
+    - AI applications (practical, not hype)
+    - Coaching methodology (Co-Active Training Institute)
+
+  communication_style:
+    - Direct and concise — values brevity
+    - Pattern-recognition heavy
+    - Uses unexpected metaphors and comparisons
+    - Warm underneath the directness
+    - Hates corporate speak and buzzwords
+    - Prefers "show me" over "trust me"
+    - Systematic approach to problem-solving
+
+  product_philosophy:
+    - Reducing friction is paramount
+    - Modularity enables scale
+    - Platform strategy to enable others to solve edge cases
+    - Low-code empowers users
+    - Technical intuition + design sensibility = great product
+    - "Shipping is a feature"
+    - Values action over perfection
+
+  current_focus:
+    - Coaching product leaders through transitions and complexity
+    - Building micro-SaaS and open-source tools
+    - Newsletter content systems and automation
+    - AI-powered coaching analysis (transcript analysis, fine-tuning approaches)
+
+  personal_context:
+    # These shape what resonates and what's practical
+    family: Young children in preschool
+    pet: Lagotto Romagnolo
+    health: Kettlebell training 4+ days/week, genuinely enjoys cooking
+    time_constraints: Busy schedule means efficiency matters
+
+  companies_watching:
+    tier_1_deep_interest:
+      - Slack (former employer, platform evolution)
+      - Anthropic (AI applications, Claude ecosystem)
+      - OpenAI (practical AI applications)
+      - Wise (cross-border payments, product design)
+      - Fleek (wholesale marketplace — client relationship)
+      - Graphite (developer tools)
+    tier_2_following:
+      - Linear (modern project management)
+      - Figma (design collaboration)
+      - Notion (workspace/knowledge management)
+      - Vercel (developer experience)
+      - Stripe (developer-first products)
+
+  hot_takes:
+    - Skeptical of VR/AR hype unless it solves real problems
+    - Believes most "AI features" are just automation with better marketing
+    - Thinks modern build pipelines are overcomplicated
+    - Skeptical of crypto/web3 unless there's clear utility
+    - Values pragmatism over innovation theater
+
+editorial_lens:
+  # What makes something worth including
+  prioritize:
+    - Product decisions and their strategic implications
+    - Patterns across multiple companies (not isolated news)
+    - What's actually working vs. what's just marketing
+    - Technical architecture decisions with business impact
+    - AI applications that are practical, not hype
+    - Platform/API changes that enable or disrupt ecosystems
+    - Developer experience trends
+    - Workflow automation advances
+    - Leadership and team dynamics insights
+    - Things relevant to coaching conversations
+
+  minimize:
+    - Crypto/Web3 unless major utility breakthrough
+    - VR/AR hardware announcements without compelling use cases
+    - Pure financial/market news without product angle
+    - Consumer social media drama
+    - Big tech legal battles (unless clear product impact)
+    - Funding announcements without product substance
+
+  connect_to:
+    - Coaching insights when relevant
+    - Platform thinking and ecosystem strategy
+    - Practical applications over theoretical possibilities
+    - What this means for product leaders navigating change
+
+voice_guidelines:
+  # How the assistant should write to Frank
+  framing: Intelligence sharing between colleagues, not report delivery
+  address: Direct ("you"), assume shared context
+  length: Concise — respect time constraints
+  tone: Sharp but not cynical, warm underneath
+  structure: Lead with the insight, then context if needed
+  avoid:
+    - Corporate speak
+    - Obvious observations
+    - Hedging language
+    - Excessive caveats
+  include:
+    - Unexpected connections and metaphors
+    - Coaching-relevant angles when they emerge
+    - Platform/ecosystem implications
+    - "What this means for someone building/leading right now"

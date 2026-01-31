@@ -1,0 +1,99 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "briefings"
+main = "dist/index.js"
+workers_dev = true
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Replace with your Cloudflare account ID
+# Find at: https://dash.cloudflare.com/ -> Select Account -> Copy Account ID
+account_id = "your-cloudflare-account-id"
+
+# Observability
+[observability]
+enabled = true
+
+# Import YAML config files as text modules
+[[rules]]
+type = "Text"
+globs = ["**/*.yaml"]
+fallthrough = true
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+R2_ENABLED = "true"
+TZ = "America/New_York"
+
+# Email settings (optional - configure via secrets)
+# EMAIL_FROM = "briefings@example.com"
+# EMAIL_TO = "you@example.com"
+# EMAIL_SUBJECT_PREFIX = "[Briefings]"  # Prefix for email subjects (e.g., "[Briefings] Your Title Here")
+
+# D1 Database
+# Create with: wrangler d1 create briefings-db
+# Then update database_id below with the ID from the output
+[[d1_databases]]
+binding = "DB"
+database_name = "briefings-db"
+database_id = "your-d1-database-id"
+
+# KV Namespace for configuration
+# Create with: wrangler kv:namespace create BRIEFINGS_CONFIG_KV
+# Then update id below with the ID from the output
+[[kv_namespaces]]
+binding = "BRIEFINGS_CONFIG_KV"
+id = "your-kv-namespace-id"
+
+# R2 Bucket for markdown output and digest history
+# Create with: wrangler r2 bucket create briefings-md-output
+[[r2_buckets]]
+binding = "briefings_md_output"
+bucket_name = "briefings-md-output"
+
+# Cron triggers
+[triggers]
+crons = [
+  "0 */4 * * *",     # Feed fetch - every 4 hours
+  "0 10 * * *",      # Daily summary - 10 AM UTC = 5 AM ET
+  "0 6 * * *",       # Validate feeds - 6 AM UTC = 1 AM ET
+  "0 13 * * 0"       # Weekly digest - Sundays 1 PM UTC = 8 AM ET
+]
+
+# Queue producers (4 simplified queues)
+[[queues.producers]]
+binding = "FEED_FETCH_QUEUE"
+queue = "briefings-feed-fetch"
+
+[[queues.producers]]
+binding = "DAILY_SUMMARY_INITIATOR_QUEUE"
+queue = "briefings-daily-summary-initiator"
+
+[[queues.producers]]
+binding = "DAILY_SUMMARY_PROCESSOR_QUEUE"
+queue = "briefings-daily-summary-processor"
+
+[[queues.producers]]
+binding = "WEEKLY_DIGEST_QUEUE"
+queue = "briefings-weekly-digest"
+
+# Queue consumers
+[[queues.consumers]]
+queue = "briefings-feed-fetch"
+max_batch_size = 10
+max_batch_timeout = 30
+
+[[queues.consumers]]
+queue = "briefings-daily-summary-initiator"
+max_batch_size = 1
+max_batch_timeout = 30
+
+[[queues.consumers]]
+queue = "briefings-daily-summary-processor"
+max_batch_size = 5
+max_batch_timeout = 60
+
+[[queues.consumers]]
+queue = "briefings-weekly-digest"
+max_batch_size = 1
+max_batch_timeout = 60

@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# Cloudflare
+.wrangler/
+wrangler.toml
+
+# Build outputs
+dist/
+.turbo/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config files (use *.example.yaml as templates)
+config/feeds.yaml
+config/prompts.yaml
+config/profile.yaml
+
+# Local backups
+backup/
+old-code/
+# Generated migrations temp files
+*.sql.tmp
+
+# Test coverage
+coverage/
