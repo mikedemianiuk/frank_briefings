@@ -74,6 +74,36 @@ async function processWeeklyDigest(
   const weekStartTs = toTimestamp(weekStart)!;
   const weekEndTs = toTimestamp(weekEnd)!;
 
+  // STEP 0: Check for existing summary
+  const existingSummary = await db
+    .selectFrom('WeeklySummary')
+    .selectAll()
+    .where('weekStartDate', '=', weekStartTs)
+    .where('weekEndDate', '=', weekEndTs)
+    .executeTakeFirst();
+
+  if (existingSummary) {
+    if (!data.forceRegenerate) {
+      logger.info('Weekly summary already exists, skipping', {
+        summaryId: existingSummary.id,
+        weekStart: format(weekStart, 'yyyy-MM-dd'),
+        weekEnd: format(weekEnd, 'yyyy-MM-dd'),
+      });
+      return;
+    }
+
+    logger.info('Weekly summary exists, force regenerating', {
+      summaryId: existingSummary.id,
+      weekStart: format(weekStart, 'yyyy-MM-dd'),
+      weekEnd: format(weekEnd, 'yyyy-MM-dd'),
+    });
+
+    await db
+      .deleteFrom('WeeklySummary')
+      .where('id', '=', existingSummary.id)
+      .execute();
+  }
+
   // STEP 1: Fetch daily summaries
   logger.info('Fetching daily summaries for the week', {
     weekStart: weekStart.toISOString(),

@@ -45,7 +45,7 @@ export async function scheduled(
     const requestId = await queueDispatcher.sendToWeeklyDigestQueue(
       format(weekStart, 'yyyy-MM-dd'),
       format(weekEnd, 'yyyy-MM-dd'),
-      false // Don't force regenerate
+      true // Force regenerate
     );
 
     logger.info('Weekly digest task queued', {
