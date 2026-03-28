@@ -64,9 +64,15 @@ export class ResendEmailService {
         ? fromAddress 
         : `Briefings <${fromAddress}>`;
 
+      // Split recipients: first in TO, rest in BCC
+      const recipients = options.to.map(r => r.email);
+      const toRecipient = recipients[0];
+      const bccRecipients = recipients.slice(1);
+
       const { data, error } = await this.resend.emails.send({
         from: fromWithName,
-        to: options.to.map(r => r.email),
+        to: toRecipient,
+        bcc: bccRecipients.length > 0 ? bccRecipients : undefined,
         subject: options.subject,
         html: options.html,
         replyTo: options.replyTo,

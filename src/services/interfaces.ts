@@ -21,7 +21,7 @@ export interface ILogger {
 // Feed Service Interface
 export interface IFeedService {
   getActiveFeeds(env: Env): Promise<Feed[]>;
-  fetchFeed(feedUrl: string): Promise<ParsedFeedItem[]>;
+  fetchFeed(feed: Feed, env?: Env): Promise<ParsedFeedItem[]>;
   processArticles(feedId: string, articles: ParsedFeedItem[], env: Env): Promise<Article[]>;
   markArticlesProcessed(articleIds: string[], env: Env): Promise<void>;
   getArticlesForDate(date: Date, feedName: string | undefined, env: Env): Promise<Article[]>;

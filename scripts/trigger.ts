@@ -40,11 +40,12 @@ function loadEnv(): EnvVars {
     // Use default
   }
 
-  return {
+ return {
     API_KEY: vars.API_KEY,
-    WORKER_URL: `https://${workerName}.hirefrank.workers.dev`,
+    // UPDATE: Point to your own worker
+    WORKER_URL: "https://briefings.mikes-briefings.workers.dev",
   };
-}
+}  // <--- THIS BRACE IS LIKELY MISSING
 
 async function makeRequest(url: string, apiKey: string, body?: object): Promise<void> {
   const response = await fetch(url, {
@@ -97,34 +98,71 @@ async function main() {
       const lastSunday = new Date(today);
       lastSunday.setDate(today.getDate() - today.getDay());
       const weekEnd = arg || lastSunday.toISOString().split('T')[0];
-      
+
+      // Check for --force flag
+      const force = process.argv.includes('--force');
+
       // Calculate week start (6 days before end for a full week)
       const weekEndDate = new Date(weekEnd);
       const weekStartDate = new Date(weekEndDate);
       weekStartDate.setDate(weekEndDate.getDate() - 6);
-      
+
       const weekStart = weekStartDate.toISOString().split('T')[0];
-      
-      console.log(`Triggering weekly digest for week ${weekStart} to ${weekEnd}...`);
-      await makeRequest(`${env.WORKER_URL}/api/run/weekly-summary`, env.API_KEY, { 
-        weekStartDate: weekStart, 
-        weekEndDate: weekEnd 
+
+      console.log(`Triggering weekly digest for week ${weekStart} to ${weekEnd}${force ? ' (force)' : ''}...`);
+      await makeRequest(`${env.WORKER_URL}/api/run/weekly-summary`, env.API_KEY, {
+        weekStartDate: weekStart,
+        weekEndDate: weekEnd,
+        force
       });
       break;
     }
+
+    case 'monthly-report': {
+      // Default to previous month
+      const today = new Date();
+      const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+      const monthEnd = arg || previousMonthEnd.toISOString().split('T')[0];
+
+      // Check for --force flag
+      const force = process.argv.includes('--force');
+
+      // Calculate month start (first day of the month containing monthEnd)
+      const monthEndDate = new Date(monthEnd);
+      const monthStartDate = new Date(monthEndDate.getFullYear(), monthEndDate.getMonth(), 1);
+
+      const monthStart = monthStartDate.toISOString().split('T')[0];
+
+      console.log(`Triggering monthly report for month ${monthStart} to ${monthEnd}${force ? ' (force)' : ''}...`);
+      await makeRequest(`${env.WORKER_URL}/api/run/monthly-report`, env.API_KEY, {
+        monthStartDate: monthStart,
+        monthEndDate: monthEnd,
+        force
+      });
+      break;
+    }
+
+    case 'health-monitor':
+      console.log(`Triggering health monitor at ${env.WORKER_URL}...`);
+      await makeRequest(`${env.WORKER_URL}/api/run/health-monitor`, env.API_KEY);
+      break;
 
     default:
       console.log(`Usage: pnpm trigger <command> [arg]
 
 Commands:
-  feed-fetch                    Trigger feed fetch
-  daily-summary [YYYY-MM-DD]    Trigger daily summary (default: yesterday)
-  weekly-summary [YYYY-MM-DD]   Trigger weekly digest (default: last Sunday)
+  feed-fetch                      Trigger feed fetch
+  daily-summary [YYYY-MM-DD]      Trigger daily summary (default: yesterday)
+  weekly-summary [YYYY-MM-DD]     Trigger weekly digest (default: last Sunday)
+  monthly-report [YYYY-MM-DD]     Trigger monthly report (default: previous month)
+  health-monitor                  Trigger health check and send status email
 
 Examples:
   pnpm trigger feed-fetch
   pnpm trigger daily-summary 2025-01-28
   pnpm trigger weekly-summary 2025-01-26
+  pnpm trigger monthly-report 2025-12-31
+  pnpm trigger health-monitor
 `);
       process.exit(1);
   }

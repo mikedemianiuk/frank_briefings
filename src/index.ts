@@ -20,20 +20,32 @@ import {
   POST as weeklySummaryPOST,
   GET as weeklySummaryGET,
 } from './server-functions/http/run-weekly-summary';
+import {
+  POST as monthlyReportPOST,
+  GET as monthlyReportGET,
+} from './server-functions/http/run-monthly-report';
+import {
+  POST as healthMonitorPOST,
+  GET as healthMonitorGET,
+} from './server-functions/http/run-health-monitor';
 import testPreviousContext from './server-functions/http/test-previous-context';
 import { requireApiKey, checkApiKey } from './server-functions/http/middleware';
 
 // Import cron handlers
 import { scheduled as feedFetchCron } from './server-functions/crons/initiate-feed-fetch';
+import { scheduled as browserFeedsCron } from './server-functions/crons/browser-feeds';
 import { scheduled as dailySummaryCron } from './server-functions/crons/initiate-daily-summary';
 import { scheduled as weeklyDigestCron } from './server-functions/crons/initiate-weekly-digest';
 import { scheduled as validateFeedsCron } from './server-functions/crons/validate-feeds';
+import { scheduled as healthMonitorCron } from './server-functions/crons/health-monitor';
+import { scheduled as monthlyReportCron } from './server-functions/crons/initiate-monthly-report';
 
 // Import queue handlers
 import { queue as feedFetchQueue } from './server-functions/queues/feed-fetch-consumer';
 import { queue as dailySummaryInitiatorQueue } from './server-functions/queues/daily-summary-initiator';
 import { queue as dailySummaryProcessorQueue } from './server-functions/queues/daily-summary-processor';
 import { queue as weeklyDigestQueue } from './server-functions/queues/weekly-digest-consumer';
+import { queue as monthlyReportQueue } from './server-functions/queues/monthly-report-consumer';
 
 // Create Hono app with Cloudflare Workers bindings
 const app = new Hono<{
@@ -108,6 +120,30 @@ api.post('/run/weekly-summary', requireApiKey, async (c) => {
   return response;
 });
 
+// Monthly report endpoints
+api.get('/run/monthly-report', checkApiKey, async (c) => {
+  const authenticated = c.get('authenticated') || false;
+  const response = await monthlyReportGET(c.req.raw, c.env, { authenticated });
+  return response;
+});
+
+api.post('/run/monthly-report', requireApiKey, async (c) => {
+  const response = await monthlyReportPOST(c.req.raw, c.env);
+  return response;
+});
+
+// Health monitor endpoints
+api.get('/run/health-monitor', checkApiKey, async (c) => {
+  const authenticated = c.get('authenticated') || false;
+  const response = await healthMonitorGET(c.req.raw, c.env);
+  return response;
+});
+
+api.post('/run/health-monitor', requireApiKey, async (c) => {
+  const response = await healthMonitorPOST(c.req.raw, c.env);
+  return response;
+});
+
 // Test endpoint for previous context (development)
 api.use('/test/previous-context/*', requireApiKey);
 api.use('/test/previous-context', requireApiKey);
@@ -144,10 +180,13 @@ export default {
 
     // Map cron expressions to handlers
     const cronHandlers: Record<string, typeof feedFetchCron> = {
-      '0 */4 * * *': feedFetchCron, // Every 4 hours
+      '0 */4 * * *': feedFetchCron, // Every 4 hours - RSS/scrape feeds only
+      '0 9 * * 5': browserFeedsCron, // Fridays at 9 AM UTC (4 AM ET) - Browser feeds only
       '0 10 * * *': dailySummaryCron, // Daily at 5 AM ET (10 AM UTC)
       '0 6 * * *': validateFeedsCron, // Daily at 1 AM ET (6 AM UTC) - validate feeds
-      '0 13 * * 0': weeklyDigestCron, // Sundays at 8 AM ET (1 PM UTC)
+      '0 13 * * 7': weeklyDigestCron, // Sundays at 8 AM ET (1 PM UTC) - 7 = Sunday
+      '0 */6 * * *': healthMonitorCron, // Every 6 hours - health monitor with 48h status emails
+      '0 9 1 * *': monthlyReportCron, // 1st of month 9 AM UTC (4 AM ET) - monthly report
     };
 
     const handler = cronHandlers[event.cron];
@@ -173,13 +212,14 @@ export default {
 
     console.warn(`Queue batch received: ${batch.queue} with ${batch.messages.length} messages`);
 
-    // Map queue names to handlers (simplified from 12 queues to 4)
+    // Map queue names to handlers (5 queues)
     type QueueHandler = (batch: any, env: Env) => Promise<void>;
     const queueHandlers: Record<string, QueueHandler> = {
       'briefings-feed-fetch': feedFetchQueue,
       'briefings-daily-summary-initiator': dailySummaryInitiatorQueue,
       'briefings-daily-summary-processor': dailySummaryProcessorQueue,
       'briefings-weekly-digest': weeklyDigestQueue,
+      'briefings-monthly-report': monthlyReportQueue,
     };
 
     const handler = queueHandlers[batch.queue];

@@ -4,12 +4,16 @@ import { Logger, FeedService } from '../../services/index.js';
 import { QueueDispatcher } from '../utils/queue-dispatcher.js';
 
 /**
- * Cron handler for initiating feed fetch tasks
+ * Cron handler for initiating feed fetch tasks (RSS and scrape types only)
  * Scheduled via wrangler.toml: 0 *\/4 * * * (every 4 hours)
  *
+ * Cost Optimization:
+ * - Browser-type feeds are excluded and handled by dedicated weekly cron
+ * - This prevents expensive browser rendering from running every 4 hours
+ *
  * Responsibilities:
- * 1. Load active feeds from configuration
- * 2. Queue feed fetch task for each active feed
+ * 1. Load active RSS and scrape feeds (excludes browser type)
+ * 2. Queue feed fetch task for each feed
  * 3. Track execution metrics
  */
 export async function scheduled(
@@ -31,11 +35,18 @@ export async function scheduled(
       logger: logger.child({ component: 'FeedService' }),
     });
 
-    // Load active feeds
-    const feeds = await feedService.getActiveFeeds(env);
+    // Load active feeds (exclude browser type - handled by dedicated weekly cron)
+    const allFeeds = await feedService.getActiveFeeds(env);
+    const feeds = allFeeds.filter((feed) => feed.type !== 'browser');
+
+    logger.info('Loaded feeds for regular fetch', {
+      total: allFeeds.length,
+      regularFeeds: feeds.length,
+      browserFeeds: allFeeds.length - feeds.length,
+    });
 
     if (feeds.length === 0) {
-      logger.warn('No active feeds found in configuration');
+      logger.warn('No active RSS/scrape feeds found in configuration');
       return;
     }
 

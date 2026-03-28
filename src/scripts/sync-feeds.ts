@@ -24,6 +24,8 @@ interface D1Feed {
   name: string;
   url: string;
   category: string | null;
+  type: string | null;
+  selector: string | null;
   isActive: number;
 }
 
@@ -59,7 +61,7 @@ function main() {
 
   // 2. Read remote D1 feeds
   const d1Feeds = runD1Query(
-    'SELECT id, name, url, category, isActive FROM Feed',
+    'SELECT id, name, url, category, type, selector, isActive FROM Feed',
     envArg
   ) as D1Feed[];
   console.log(`Remote feeds: ${d1Feeds.length}`);
@@ -72,12 +74,24 @@ function main() {
   for (const feed of yamlFeeds) {
     const existing = d1ByUrl.get(feed.url);
     if (existing) {
-      // Update name/category/reactivate
+      // Update name/category/type/selector/isActive based on YAML
       const sets: string[] = [];
       if (existing.name !== feed.name) sets.push(`name='${feed.name.replace(/'/g, "''")}'`);
       if (existing.category !== (feed.category || 'General'))
         sets.push(`category='${(feed.category || 'General').replace(/'/g, "''")}'`);
-      if (existing.isActive !== 1) sets.push('isActive=1');
+      const feedType = feed.type || 'rss';
+      if (existing.type !== feedType) sets.push(`type='${feedType}'`);
+      const feedSelector = feed.selector || null;
+      if (existing.selector !== feedSelector) {
+        if (feedSelector) {
+          sets.push(`selector='${feedSelector.replace(/'/g, "''")}'`);
+        } else {
+          sets.push(`selector=NULL`);
+        }
+      }
+      // Respect isActive from YAML (defaults to true if not specified)
+      const yamlIsActive = feed.isActive !== false ? 1 : 0;
+      if (existing.isActive !== yamlIsActive) sets.push(`isActive=${yamlIsActive}`);
       sets.push(`updatedAt=${Date.now()}`);
 
       if (sets.length > 0) {
@@ -94,8 +108,11 @@ function main() {
       const name = feed.name.replace(/'/g, "''");
       const url = feed.url.replace(/'/g, "''");
       const category = (feed.category || 'General').replace(/'/g, "''");
+      const type = feed.type || 'rss';
+      const selector = feed.selector ? `'${feed.selector.replace(/'/g, "''")}'` : 'NULL';
+      const isActive = feed.isActive !== false ? 1 : 0;
       runD1Query(
-        `INSERT INTO Feed (id, name, url, category, isActive, isValid, errorCount, createdAt, updatedAt) VALUES ('${id}', '${name}', '${url}', '${category}', 1, 1, 0, ${now}, ${now})`,
+        `INSERT INTO Feed (id, name, url, category, type, selector, isActive, isValid, errorCount, createdAt, updatedAt) VALUES ('${id}', '${name}', '${url}', '${category}', '${type}', ${selector}, ${isActive}, 1, 0, ${now}, ${now})`,
         envArg
       );
       upserted++;
@@ -122,12 +139,15 @@ function main() {
     for (const d of deactivated) {
       // Only append if not already in YAML
       if (!rawYaml.feeds.some((f) => f.url === d.url)) {
-        rawYaml.feeds.push({
+        const entry: YamlFeedEntry = {
           name: d.name,
           url: d.url,
           category: d.category || 'General',
           active: false,
-        });
+        };
+        if (d.type) entry.type = d.type as 'rss' | 'scrape' | 'browser';
+        if (d.selector) entry.selector = d.selector;
+        rawYaml.feeds.push(entry);
       }
     }
     writeFileSync(FEEDS_YAML_PATH, stringify(rawYaml, { lineWidth: 120 }), 'utf-8');

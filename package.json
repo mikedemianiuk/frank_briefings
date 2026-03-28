@@ -7,16 +7,19 @@
   "scripts": {
     "dev": "wrangler dev --remote",
     "deploy": "wrangler deploy",
+    "predeploy": "pnpm validate:cron",
     "tail": "wrangler tail",
     "db:migrate": "wrangler d1 migrations apply DB --remote",
     "sync:feeds": "tsx src/scripts/sync-feeds.ts",
     "trigger": "tsx scripts/trigger.ts",
+    "validate:cron": "tsx scripts/validate-cron-config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "cheerio": "^1.2.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "fast-xml-parser": "^4.3.4",
@@ -30,6 +33,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@cloudflare/puppeteer": "^1.0.6",
     "@cloudflare/workers-types": "^4.20241218.0",
     "@types/mustache": "^4.2.6",
     "@types/node": "^22.14.0",

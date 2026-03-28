@@ -69,6 +69,39 @@ export const WeeklySummaryRequestSchema = z
     }
   );
 
+// Monthly Report Request Schema
+export const MonthlyReportRequestSchema = z
+  .object({
+    monthStartDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+      .optional(),
+    monthEndDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+      .optional(),
+    force: z.boolean().optional().default(false),
+  })
+  .refine(
+    (data) => {
+      // If one date is provided, both must be provided
+      if ((data.monthStartDate && !data.monthEndDate) || (!data.monthStartDate && data.monthEndDate)) {
+        return false;
+      }
+
+      // If both dates are provided, start date must be before end date
+      if (data.monthStartDate && data.monthEndDate) {
+        return new Date(data.monthStartDate) < new Date(data.monthEndDate);
+      }
+
+      return true;
+    },
+    {
+      message:
+        'Both monthStartDate and monthEndDate must be provided, and start date must be before end date',
+    }
+  );
+
 // Response schemas
 export const ApiResponseSchema = z.object({
   success: z.boolean(),
@@ -90,6 +123,7 @@ export const ErrorResponseSchema = z.object({
 export type FeedFetchRequest = z.infer<typeof FeedFetchRequestSchema>;
 export type DailySummaryRequest = z.infer<typeof DailySummaryRequestSchema>;
 export type WeeklySummaryRequest = z.infer<typeof WeeklySummaryRequestSchema>;
+export type MonthlyReportRequest = z.infer<typeof MonthlyReportRequestSchema>;
 export type ApiResponse = z.infer<typeof ApiResponseSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 
@@ -294,5 +328,33 @@ export function calculateWeekRange(
   return {
     weekStartDate: monday.toISOString().split('T')[0],
     weekEndDate: finalEndDate.toISOString().split('T')[0],
+  };
+}
+
+/**
+ * Calculate month date range
+ */
+export function calculateMonthRange(
+  startDate?: string,
+  endDate?: string
+): {
+  monthStartDate: string;
+  monthEndDate: string;
+} {
+  if (startDate && endDate) {
+    return {
+      monthStartDate: validateAndParseDate(startDate, false),
+      monthEndDate: validateAndParseDate(endDate, false),
+    };
+  }
+
+  // Default to previous month
+  const today = new Date();
+  const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+  return {
+    monthStartDate: previousMonth.toISOString().split('T')[0],
+    monthEndDate: previousMonthEnd.toISOString().split('T')[0],
   };
 }

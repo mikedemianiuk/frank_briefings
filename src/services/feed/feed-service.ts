@@ -6,6 +6,10 @@ import type { IFeedService, ParsedFeedItem, ILogger } from '../interfaces.js';
 import { Logger } from '../../lib/logger.js';
 import { FeedError, DatabaseError, ErrorCode } from '../../lib/errors.js';
 import { parseISO, isValid } from 'date-fns';
+import type { IFeedAdapter } from './adapters/feed-adapter.js';
+import { RssAdapter } from './adapters/rss-adapter.js';
+import { ScraperAdapter } from './adapters/scraper-adapter.js';
+import { BrowserAdapter } from './adapters/browser-adapter.js';
 
 /**
  * RSS feed parsing and article processing service
@@ -99,58 +103,76 @@ export class FeedService implements IFeedService {
   }
 
   /**
-   * Fetch and parse RSS feed
+   * Fetch and parse feed using appropriate adapter
    */
-  async fetchFeed(feedUrl: string): Promise<ParsedFeedItem[]> {
+  async fetchFeed(feed: Feed, env?: Env): Promise<ParsedFeedItem[]> {
     try {
-      this.logger.debug('Fetching RSS feed', { feedUrl });
-
-      const feed = await this.parser.parseURL(feedUrl);
-
-      if (!feed.items || feed.items.length === 0) {
-        this.logger.warn('No items found in feed', { feedUrl });
-        return [];
-      }
-
-      // Map RSS items to our interface
-      const parsedItems: ParsedFeedItem[] = feed.items.map((item) => {
-        const parsed: ParsedFeedItem = {
-          title: item.title || 'Untitled',
-          link: item.link || item.guid || '',
-        };
-
-        // Add optional properties if they exist
-        if (item.content) parsed.content = item.content;
-        if (item.contentSnippet) parsed.contentSnippet = item.contentSnippet;
-        if (item.creator) parsed.creator = item.creator;
-        if (item.isoDate) parsed.isoDate = item.isoDate;
-        if (item.pubDate) parsed.pubDate = item.pubDate;
-
-        return parsed;
+      this.logger.debug('Fetching feed', {
+        feedUrl: feed.url,
+        feedType: feed.type,
+        selector: feed.selector,
       });
 
-      this.logger.info('Successfully fetched RSS feed', {
-        feedUrl,
+      // Select the appropriate adapter based on feed type
+      let adapter: IFeedAdapter;
+      if (feed.type === 'browser') {
+        // Browser rendering requires API token and account ID
+        if (!env || !env.BROWSER_API_TOKEN) {
+          throw new FeedError(
+            'Browser rendering requires BROWSER_API_TOKEN secret',
+            ErrorCode.FEED_PARSE_ERROR,
+            {
+              service: 'feed',
+              operation: 'fetchFeed',
+              metadata: {
+                feedUrl: feed.url,
+                feedType: feed.type,
+                hint: 'Set BROWSER_API_TOKEN secret: wrangler secret put BROWSER_API_TOKEN',
+              },
+            }
+          );
+        }
+        // Get account ID from wrangler.toml (hardcoded since it's in the config)
+        const accountId = '7d69e0f16ee27cf3683f6d75d6847a3c';
+        adapter = new BrowserAdapter(accountId, env.BROWSER_API_TOKEN);
+      } else if (feed.type === 'scrape') {
+        adapter = new ScraperAdapter();
+      } else {
+        adapter = new RssAdapter();
+      }
+
+      // Fetch articles using the adapter
+      const parsedItems = await adapter.fetchArticles(feed.url, feed.selector);
+
+      this.logger.info('Successfully fetched feed', {
+        feedUrl: feed.url,
+        feedType: feed.type,
         itemCount: parsedItems.length,
       });
 
       return parsedItems;
     } catch (error) {
-      this.logger.error('Failed to fetch RSS feed', error as Error, {
-        feedUrl,
+      this.logger.error('Failed to fetch feed', error as Error, {
+        feedUrl: feed.url,
+        feedType: feed.type,
         errorMessage: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         errorName: error instanceof Error ? error.name : undefined,
       });
 
-      // Check if it's a network or parsing error
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      // Re-throw if it's already a FeedError
+      if (error instanceof FeedError) {
+        throw error;
+      }
 
-      throw new FeedError(`Failed to parse RSS feed: ${errorMessage}`, ErrorCode.FEED_PARSE_ERROR, {
+      // Wrap other errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new FeedError(`Failed to fetch feed: ${errorMessage}`, ErrorCode.FEED_PARSE_ERROR, {
         service: 'feed',
         operation: 'fetchFeed',
         metadata: {
-          feedUrl,
+          feedUrl: feed.url,
+          feedType: feed.type,
           originalError: errorMessage,
         },
       });

@@ -16,10 +16,11 @@ import { createEmailService } from '../../lib/email.js';
 import { subDays, format } from 'date-fns';
 
 export interface WeeklyDigestMessage {
-  id: string;
-  requestId: string;
+  weekStartDate: string;
   weekEndDate: string;
-  forceRegenerate?: boolean;
+  force?: boolean;
+  feedGroupId?: string;
+  requestId: string;
   timestamp: string;
 }
 
@@ -63,7 +64,7 @@ async function processWeeklyDigest(
   logger.info('Processing weekly digest', {
     requestId: data.requestId,
     weekEndDate: data.weekEndDate,
-    forceRegenerate: data.forceRegenerate,
+    force: data.force,
   });
 
   const db = getDb(env);
@@ -83,7 +84,7 @@ async function processWeeklyDigest(
     .executeTakeFirst();
 
   if (existingSummary) {
-    if (!data.forceRegenerate) {
+    if (!data.force) {
       logger.info('Weekly summary already exists, skipping', {
         summaryId: existingSummary.id,
         weekStart: format(weekStart, 'yyyy-MM-dd'),

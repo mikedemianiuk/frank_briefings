@@ -1,0 +1,195 @@
+# Scrape Feed Configuration
+# Add feeds here and run: bash scripts/import-scrape-feeds.sh
+
+feeds:
+  # ============================================================================
+  # FINTECH & PAYMENTS STRATEGY
+  # ============================================================================
+  - name: "Stripe News"
+    url: "https://stripe.com/newsroom/news"
+    type: "scrape"
+    selector: "h3"  # Verified selector for Stripe news headlines
+    category: "Fintech"
+
+  - name: "Plaid Blog"
+    url: "https://plaid.com/blog/"
+    type: "scrape"
+    selector: "article h2"
+    category: "Fintech"
+
+  - name: "Adyen Blog"
+    url: "https://www.adyen.com/blog"
+    type: "scrape"
+    selector: "h3.text-heading-3"
+    category: "Payments"
+
+  - name: "Marqeta Press Releases"
+    url: "https://investors.marqeta.com/news-releases"
+    type: "scrape"
+    selector: "a.module-headline-link"
+    category: "Payments"
+
+  - name: "Block (Square) News"
+    url: "https://squareup.com/us/en/press"
+    type: "scrape"
+    selector: "h3"
+    category: "Fintech"
+
+  - name: "PayPal Newsroom"
+    url: "https://newsroom.paypal-corp.com/news"
+    type: "scrape"
+    selector: "h3.wd_title"
+    category: "Payments"
+
+  - name: "Revolut Blog"
+    url: "https://blog.revolut.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Fintech"
+
+  - name: "Wise Blog"
+    url: "https://wise.com/us/blog/"
+    type: "scrape"
+    selector: "h3"
+    category: "Fintech"
+
+  - name: "Affirm Press"
+    url: "https://investors.affirm.com/news-releases"
+    type: "scrape"
+    selector: "a.module-headline-link"
+    category: "Fintech"
+
+  - name: "Klarna News"
+    url: "https://www.klarna.com/international/press/"
+    type: "scrape"
+    selector: "h3"
+    category: "Fintech"
+
+  # ============================================================================
+  # INDUSTRY NEWS & ANALYSIS
+  # ============================================================================
+  - name: "Finextra"
+    url: "https://www.finextra.com/news"
+    type: "scrape"
+    selector: "h3"
+    category: "Fintech News"
+
+  - name: "PYMNTS.com"
+    url: "https://www.pymnts.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Payments"
+
+  - name: "Banking Dive"
+    url: "https://www.bankingdive.com/"
+    type: "scrape"
+    selector: "h3.feed__title"
+    category: "Banking"
+
+  - name: "Fintech Futures"
+    url: "https://www.fintechfutures.com/"
+    type: "scrape"
+    selector: "h3.entry-title"
+    category: "Fintech News"
+
+  - name: "The Finanser (Chris Skinner)"
+    url: "https://thefinanser.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Fintech Analysis"
+
+  # ============================================================================
+  # CREDIT CARDS, LOYALTY & COBRAND
+  # ============================================================================
+  - name: "The Points Guy"
+    url: "https://thepointsguy.com/news/"
+    type: "scrape"
+    selector: "h2.post-title"
+    category: "Loyalty"
+
+  - name: "Doctor of Credit"
+    url: "https://www.doctorofcredit.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Credit Cards"
+
+  - name: "One Mile at a Time"
+    url: "https://onemileatatime.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Loyalty"
+
+  - name: "View from the Wing"
+    url: "https://viewfromthewing.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Airline Loyalty"
+
+  - name: "Loyalty Lobby"
+    url: "https://loyaltylobby.com/"
+    type: "scrape"
+    selector: "h2.entry-title"
+    category: "Loyalty"
+
+  - name: "Chase Media Center"
+    url: "https://media.chase.com/"
+    type: "scrape"
+    selector: "h3"
+    category: "Competitor News"
+
+  - name: "American Express Newsroom"
+    url: "https://about.americanexpress.com/newsroom/"
+    type: "scrape"
+    selector: "h3"
+    category: "Competitor News"
+
+  - name: "Mastercard Newsroom"
+    url: "https://www.mastercard.com/news/press/"
+    type: "scrape"
+    selector: "h3"
+    category: "Payments Network"
+
+  - name: "Visa Newsroom"
+    url: "https://usa.visa.com/about-visa/newsroom.html"
+    type: "scrape"
+    selector: "h3"
+    category: "Payments Network"
+
+  # ============================================================================
+  # MAJOR TECH & VC
+  # ============================================================================
+  - name: "TechCrunch"
+    url: "https://techcrunch.com/"
+    type: "scrape"
+    selector: "h2.wp-block-post-title"
+    category: "Tech News"
+
+  - name: "VentureBeat"
+    url: "https://venturebeat.com/"
+    type: "scrape"
+    selector: "h2.article-title"
+    category: "Tech News"
+
+  - name: "The Verge"
+    url: "https://www.theverge.com/"
+    type: "scrape"
+    selector: "h2"
+    category: "Tech News"
+
+  - name: "a16z (Andreessen Horowitz)"
+    url: "https://a16z.com/articles/"
+    type: "scrape"
+    selector: "h3"
+    category: "VC Analysis"
+
+  - name: "Sequoia Capital"
+    url: "https://www.sequoiacap.com/our-stories/"
+    type: "scrape"
+    selector: "h3"
+    category: "VC Analysis"
+
+  - name: "Y Combinator Blog"
+    url: "https://www.ycombinator.com/blog"
+    type: "scrape"
+    selector: "h3"
+    category: "VC Analysis"

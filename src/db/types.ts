@@ -15,6 +15,8 @@ export interface FeedTable {
   id: Generated<string>;
   name: string;
   url: string;
+  type: string; // 'rss' | 'scrape'
+  selector: string | null;
   category: string | null;
   isActive: number; // boolean: 0 | 1
   isValid: number; // boolean: 0 | 1
@@ -80,6 +82,27 @@ export interface DailyWeeklySummaryRelationTable {
   weeklySummaryId: string;
 }
 
+export interface MonthlySummaryTable {
+  id: Generated<string>;
+  monthStartDate: number; // unix ms
+  monthEndDate: number; // unix ms
+  title: string;
+  executiveSummary: string;
+  marketAnalysis: string;
+  competitiveLandscape: string;
+  productDevelopment: string;
+  strategicImplications: string;
+  topics: string | null; // JSON array
+  sentAt: number | null; // unix ms
+  createdAt: number | null; // unix ms
+  updatedAt: number | null; // unix ms
+}
+
+export interface WeeklyMonthlySummaryRelationTable {
+  weeklySummaryId: string;
+  monthlySummaryId: string;
+}
+
 export interface PromptTemplateTable {
   id: Generated<string>;
   name: string;
@@ -98,8 +121,10 @@ export interface Database {
   Article: ArticleTable;
   DailySummary: DailySummaryTable;
   WeeklySummary: WeeklySummaryTable;
+  MonthlySummary: MonthlySummaryTable;
   ArticleSummaryRelation: ArticleSummaryRelationTable;
   DailyWeeklySummaryRelation: DailyWeeklySummaryRelationTable;
+  WeeklyMonthlySummaryRelation: WeeklyMonthlySummaryRelationTable;
   PromptTemplate: PromptTemplateTable;
 }
 
@@ -111,6 +136,7 @@ export type Feed = Selectable<FeedTable>;
 export type Article = Selectable<ArticleTable>;
 export type DailySummary = Selectable<DailySummaryTable>;
 export type WeeklySummary = Selectable<WeeklySummaryTable>;
+export type MonthlySummary = Selectable<MonthlySummaryTable>;
 
 // ---------------------------------------------------------------------------
 // Insert types
@@ -120,3 +146,4 @@ export type NewFeed = Insertable<FeedTable>;
 export type NewArticle = Insertable<ArticleTable>;
 export type NewDailySummary = Insertable<DailySummaryTable>;
 export type NewWeeklySummary = Insertable<WeeklySummaryTable>;
+export type NewMonthlySummary = Insertable<MonthlySummaryTable>;

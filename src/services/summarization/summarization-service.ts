@@ -628,18 +628,45 @@ export class SummarizationService implements ISummarizationService {
 
   /**
    * Parse weekly recap content into sections
+   * New format includes WEEKLY THESIS and THEME HIGHLIGHTS sections
+   * Legacy format includes Below the Fold and So What sections
    */
   parseRecapSections(content: string): {
     belowTheFoldContent?: string;
     recapContent: string;
     soWhatContent?: string;
   } {
-    const belowTheFoldMatch = content.match(/## Below the Fold\n([\s\S]*?)(?=## |$)/);
-    const soWhatMatch = content.match(/## So What\?\n([\s\S]*?)(?=## |$)/);
+    // New format: Extract thesis and theme highlights for separate storage
+    const thesisMatch = content.match(/##\s*WEEKLY THESIS[^\n]*\n([\s\S]*?)(?=##|$)/i);
+    const themeMatch = content.match(/##\s*THEME HIGHLIGHTS[^\n]*\n([\s\S]*?)(?=##|$)/i);
 
+    // Legacy format: Below the Fold and So What sections
+    const belowTheFoldMatch = content.match(/##\s*Below the Fold\n([\s\S]*?)(?=##|$)/i);
+    const soWhatMatch = content.match(/##\s*So What\?\n([\s\S]*?)(?=##|$)/i);
+
+    const thesisContent = thesisMatch?.[1]?.trim();
+    const themeHighlights = themeMatch?.[1]?.trim();
     const belowTheFoldContent = belowTheFoldMatch?.[1]?.trim();
     const soWhatContent = soWhatMatch?.[1]?.trim();
 
+    // For new format, store thesis in belowTheFoldContent and theme highlights in soWhatContent
+    // This reuses existing columns without requiring database migration
+    if (thesisContent && themeHighlights) {
+      this.logger.info('Parsed new format weekly recap', {
+        hasThesis: true,
+        hasThemes: true,
+        thesisLength: thesisContent.length,
+        themesLength: themeHighlights.length,
+      });
+
+      return {
+        recapContent: content.trim(), // Full content including all sections
+        belowTheFoldContent: thesisContent, // Thesis stored here
+        soWhatContent: themeHighlights, // Theme highlights stored here
+      };
+    }
+
+    // Legacy format handling
     let recapContent = content;
     if (belowTheFoldMatch) {
       recapContent = recapContent.replace(belowTheFoldMatch[0], '');
@@ -647,6 +674,11 @@ export class SummarizationService implements ISummarizationService {
     if (soWhatMatch) {
       recapContent = recapContent.replace(soWhatMatch[0], '');
     }
+
+    this.logger.info('Parsed legacy format weekly recap', {
+      hasBelowFold: !!belowTheFoldContent,
+      hasSoWhat: !!soWhatContent,
+    });
 
     return {
       recapContent: recapContent.trim(),
@@ -991,6 +1023,80 @@ Return as valid JSON. Do not include markdown code blocks.`;
       .replace(/```\n?$/g, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
+  }
+
+  /**
+   * Parse monthly report metadata (title, topics)
+   */
+  parseMonthlyReportMetadata(content: string): {
+    title: string;
+    topics: string[];
+  } {
+    const lines = content.split('\n');
+    let title = 'Monthly Strategic Intelligence Report';
+    let topics: string[] = [];
+
+    for (let i = 0; i < Math.min(lines.length, 10); i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('Title:')) {
+        title = line.replace('Title:', '').trim();
+      } else if (line.startsWith('Topics:')) {
+        topics = line
+          .replace('Topics:', '')
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t);
+      }
+    }
+
+    this.logger.info('Parsed monthly report metadata', {
+      title,
+      topicCount: topics.length,
+    });
+
+    return { title, topics };
+  }
+
+  /**
+   * Parse monthly report content into sections
+   */
+  parseMonthlyReportSections(content: string): {
+    executiveSummary: string;
+    marketAnalysis: string;
+    competitiveLandscape: string;
+    productDevelopment: string;
+    strategicImplications: string;
+  } {
+    const execMatch = content.match(/##\s*EXECUTIVE SUMMARY[^\n]*\n([\s\S]*?)(?=##|$)/i);
+    const marketMatch = content.match(/##\s*MARKET ANALYSIS[^\n]*\n([\s\S]*?)(?=##|$)/i);
+    const compMatch = content.match(/##\s*COMPETITIVE LANDSCAPE[^\n]*\n([\s\S]*?)(?=##|$)/i);
+    const productMatch = content.match(
+      /##\s*PRODUCT DEVELOPMENT & STRATEGIC IMPLICATIONS[^\n]*\n([\s\S]*?)(?=##|$)/i
+    );
+
+    const executiveSummary = execMatch?.[1]?.trim() || 'No executive summary available.';
+    const marketAnalysis = marketMatch?.[1]?.trim() || 'No market analysis available.';
+    const competitiveLandscape =
+      compMatch?.[1]?.trim() || 'No competitive landscape analysis available.';
+    const productDevelopment =
+      productMatch?.[1]?.trim() || 'No product development analysis available.';
+    const strategicImplications =
+      productMatch?.[1]?.trim() || 'No strategic implications available.';
+
+    this.logger.info('Parsed monthly report sections', {
+      hasExecutiveSummary: !!execMatch,
+      hasMarketAnalysis: !!marketMatch,
+      hasCompetitiveLandscape: !!compMatch,
+      hasProductDevelopment: !!productMatch,
+    });
+
+    return {
+      executiveSummary,
+      marketAnalysis,
+      competitiveLandscape,
+      productDevelopment,
+      strategicImplications,
+    };
   }
 
   /**

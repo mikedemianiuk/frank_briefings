@@ -21,6 +21,10 @@ const FeedEntrySchema = z.object({
   name: z.string(),
   url: z.string().url(),
   category: z.string().optional().default('General'),
+  type: z.enum(['rss', 'scrape', 'browser']).optional().default('rss'),
+  selector: z.string().optional(),
+  isActive: z.boolean().optional().default(true),
+  id: z.string().optional(),
 });
 
 const FeedsConfigSchema = z.object({
@@ -48,6 +52,7 @@ const PromptEntrySchema = z.object({
 const PromptsConfigSchema = z.object({
   'daily-summary': PromptEntrySchema,
   'weekly-digest': PromptEntrySchema,
+  'monthly-report': PromptEntrySchema,
 });
 
 export type PromptType = keyof z.infer<typeof PromptsConfigSchema>;
@@ -58,6 +63,7 @@ export function parsePromptsConfig(yamlContent: string): Record<PromptType, stri
   return {
     'daily-summary': config['daily-summary'].template,
     'weekly-digest': config['weekly-digest'].template,
+    'monthly-report': config['monthly-report'].template,
   };
 }
 

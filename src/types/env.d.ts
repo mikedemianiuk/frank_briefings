@@ -9,16 +9,21 @@ declare global {
     // R2 Buckets
     briefings_md_output: R2Bucket;
 
+    // Browser Rendering (Requires Workers Paid Plan + compatibility_date >= 2025-09-15)
+    BROWSER?: Fetcher;
+
     // Queue Bindings
     FEED_FETCH_QUEUE: Queue;
     DAILY_SUMMARY_INITIATOR_QUEUE: Queue;
     DAILY_SUMMARY_PROCESSOR_QUEUE: Queue;
     WEEKLY_DIGEST_QUEUE: Queue;
+    MONTHLY_REPORT_QUEUE: Queue;
 
     // Secrets
     GEMINI_API_KEY: string;
     API_KEY?: string;
     RESEND_API_KEY?: string;
+    BROWSER_API_TOKEN?: string;
 
     // Environment Variables
     LOG_LEVEL?: string;

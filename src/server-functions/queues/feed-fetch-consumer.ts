@@ -107,17 +107,6 @@ async function processFeedFetchMessage(
       logger: logger.child({ component: 'FeedService' }),
     });
 
-    // Fetch and process the feed
-    const feedItems = await feedService.fetchFeed(validatedMessage.feedUrl);
-
-    if (feedItems.length === 0) {
-      logger.info('No items found in feed', {
-        feedName: validatedMessage.feedName,
-        feedUrl: validatedMessage.feedUrl,
-      });
-      return;
-    }
-
     // Get database instance
     const db = getDb(env);
 
@@ -138,6 +127,7 @@ async function processFeedFetchMessage(
           id: crypto.randomUUID(),
           name: validatedMessage.feedName,
           url: validatedMessage.feedUrl,
+          type: 'rss', // Default to RSS
           isActive: 1,
           isValid: 1,
           errorCount: 0,
@@ -146,6 +136,17 @@ async function processFeedFetchMessage(
         } satisfies NewFeed)
         .returningAll()
         .executeTakeFirstOrThrow();
+    }
+
+    // Fetch and process the feed
+    const feedItems = await feedService.fetchFeed(feed, env);
+
+    if (feedItems.length === 0) {
+      logger.info('No items found in feed', {
+        feedName: validatedMessage.feedName,
+        feedUrl: validatedMessage.feedUrl,
+      });
+      return;
     }
 
     // Process the feed items
@@ -231,32 +232,85 @@ async function validateFeed(
       feedName: message.feedName,
     });
 
-    const validationResult = await validateRssFeed(message.feedUrl);
+    // Get feed from database to check type
+    const feed = await db
+      .selectFrom('Feed')
+      .select(['type'])
+      .where('url', '=', message.feedUrl)
+      .executeTakeFirst();
 
-    const updates: Record<string, unknown> = {
-      isValid: validationResult.isValid ? 1 : 0,
-      validationError: validationResult.isValid ? null : validationResult.error,
-      updatedAt: Date.now(),
-    };
-
-    if (validationResult.isValid && validationResult.title) {
-      updates.name = validationResult.title;
+    if (!feed) {
+      logger.warn('Feed not found in database, skipping validation', {
+        feedUrl: message.feedUrl,
+      });
+      return;
     }
 
-    await db
-      .updateTable('Feed')
-      .set(updates)
-      .where('url', '=', message.feedUrl)
-      .execute();
+    // Only validate RSS/Atom feeds with the RSS validator
+    // Scrape-type feeds use CSS selectors and return HTML, which would fail RSS validation
+    if (feed.type === 'rss') {
+      const validationResult = await validateRssFeed(message.feedUrl);
 
-    const duration = Date.now() - startTime;
+      const updates: Record<string, unknown> = {
+        isValid: validationResult.isValid ? 1 : 0,
+        validationError: validationResult.isValid ? null : validationResult.error,
+        updatedAt: Date.now(),
+      };
 
-    logger.info('Feed validation completed', {
-      feedUrl: message.feedUrl,
-      isValid: validationResult.isValid,
-      error: validationResult.error,
-      duration,
-    });
+      if (validationResult.isValid && validationResult.title) {
+        updates.name = validationResult.title;
+      }
+
+      await db
+        .updateTable('Feed')
+        .set(updates)
+        .where('url', '=', message.feedUrl)
+        .execute();
+
+      const duration = Date.now() - startTime;
+
+      logger.info('RSS feed validation completed', {
+        feedUrl: message.feedUrl,
+        isValid: validationResult.isValid,
+        error: validationResult.error,
+        duration,
+      });
+    } else if (feed.type === 'scrape') {
+      // For scrape feeds, just verify the URL is reachable
+      const response = await fetch(message.feedUrl, {
+        method: 'HEAD',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Briefings/1.0; +https://briefings.mikedteaches.com)',
+        },
+      });
+
+      const isValid = response.ok;
+      const validationError = isValid ? null : `HTTP ${response.status}: ${response.statusText}`;
+
+      await db
+        .updateTable('Feed')
+        .set({
+          isValid: isValid ? 1 : 0,
+          validationError,
+          updatedAt: Date.now(),
+        })
+        .where('url', '=', message.feedUrl)
+        .execute();
+
+      const duration = Date.now() - startTime;
+
+      logger.info('Scrape feed validation completed', {
+        feedUrl: message.feedUrl,
+        isValid,
+        httpStatus: response.status,
+        duration,
+      });
+    } else {
+      logger.warn('Unknown feed type, skipping validation', {
+        feedUrl: message.feedUrl,
+        feedType: feed.type,
+      });
+    }
   } catch (error) {
     const duration = Date.now() - startTime;
 

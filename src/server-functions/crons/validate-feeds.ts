@@ -3,6 +3,14 @@ import { Logger } from '../../lib/logger.js';
 import { QueueDispatcher } from '../utils/queue-dispatcher.js';
 import { getDb, setupDb } from '../../db.js';
 
+// Feeds with known access restrictions (403/405) that should be skipped during validation
+// These feeds will only be validated when they successfully fetch articles
+const FEEDS_WITH_ACCESS_RESTRICTIONS = [
+  'https://news.ycombinator.com/news', // Hacker News - returns 405
+  'https://www.mastercard.com/news/press/', // Mastercard - returns 403
+  'https://ir.united.com/news-releases', // United Airlines - returns 403
+];
+
 /**
  * Cron handler for validating all active feeds
  */
@@ -34,10 +42,23 @@ export async function scheduled(
       return;
     }
 
+    // Filter out feeds with known access restrictions
+    const feedsToValidate = activeFeeds.filter(feed => !FEEDS_WITH_ACCESS_RESTRICTIONS.includes(feed.url));
+    const skippedFeeds = activeFeeds.filter(feed => FEEDS_WITH_ACCESS_RESTRICTIONS.includes(feed.url));
+
+    if (skippedFeeds.length > 0) {
+      logger.info('Skipping feeds with known access restrictions', {
+        count: skippedFeeds.length,
+        feeds: skippedFeeds.map(f => ({ name: f.name, url: f.url })),
+      });
+    }
+
     logger.info('Found active feeds for validation', {
       total: activeFeeds.length,
-      valid: activeFeeds.filter((f) => f.isValid === 1).length,
-      invalid: activeFeeds.filter((f) => f.isValid !== 1).length,
+      toValidate: feedsToValidate.length,
+      skipped: skippedFeeds.length,
+      valid: feedsToValidate.filter((f) => f.isValid === 1).length,
+      invalid: feedsToValidate.filter((f) => f.isValid !== 1).length,
     });
 
     const queueDispatcher = QueueDispatcher.create(env);
@@ -46,10 +67,10 @@ export async function scheduled(
       total: activeFeeds.length,
       queued: 0,
       failed: 0,
-      skipped: 0,
+      skipped: skippedFeeds.length,
     };
 
-    const validationPromises = activeFeeds.map(async (feed) => {
+    const validationPromises = feedsToValidate.map(async (feed) => {
       try {
         await queueDispatcher.sendFeedFetchMessage({
           feedUrl: feed.url,

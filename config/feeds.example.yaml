@@ -14,3 +14,10 @@ feeds:
   - name: Wired
     url: https://www.wired.com/feed/rss
     category: Technology
+
+  - name: "Hacker News (Scrape Test)"
+    url: "https://news.ycombinator.com/news"
+    type: "scrape"
+    selector: ".titleline" # This selector grabs article titles from HN
+    category: "Tech"
+    isActive: true  

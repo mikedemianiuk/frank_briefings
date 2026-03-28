@@ -22,7 +22,7 @@ export async function fetchAllFeedsTask(
     for (const feed of activeFeeds) {
       try {
         logger.info(`Fetching feed: ${feed.name} (${feed.url})`);
-        const feedItems = await feedService.fetchFeed(feed.url);
+        const feedItems = await feedService.fetchFeed(feed, env);
 
         if (feedItems.length > 0) {
           const articles = await feedService.processArticles(String(feed.id), feedItems, env);

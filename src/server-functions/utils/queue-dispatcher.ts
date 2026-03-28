@@ -39,11 +39,20 @@ export const WeeklyDigestMessageSchema = z.object({
   timestamp: z.string(),
 });
 
+export const MonthlyReportMessageSchema = z.object({
+  monthStartDate: z.string(),
+  monthEndDate: z.string(),
+  force: z.boolean().optional().default(false),
+  requestId: z.string().uuid(),
+  timestamp: z.string(),
+});
+
 // Type exports
 export type FeedFetchMessage = z.infer<typeof FeedFetchMessageSchema>;
 export type DailySummaryMessage = z.infer<typeof DailySummaryMessageSchema>;
 export type DailySummaryProcessorMessage = z.infer<typeof DailySummaryProcessorMessageSchema>;
 export type WeeklyDigestMessage = z.infer<typeof WeeklyDigestMessageSchema>;
+export type MonthlyReportMessage = z.infer<typeof MonthlyReportMessageSchema>;
 
 /**
  * Validate queue message
@@ -212,6 +221,27 @@ export class QueueDispatcher {
     };
 
     await this.sendToQueue('WEEKLY_DIGEST_QUEUE', message, WeeklyDigestMessageSchema);
+    return requestId;
+  }
+
+  /**
+   * Send monthly report message
+   */
+  async sendToMonthlyReportQueue(
+    monthStartDate: string,
+    monthEndDate: string,
+    force?: boolean
+  ): Promise<string> {
+    const requestId = this.generateRequestId();
+    const message: MonthlyReportMessage = {
+      monthStartDate,
+      monthEndDate,
+      force,
+      requestId,
+      timestamp: this.getCurrentTimestamp(),
+    };
+
+    await this.sendToQueue('MONTHLY_REPORT_QUEUE', message, MonthlyReportMessageSchema);
     return requestId;
   }
 
